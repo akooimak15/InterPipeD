@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import logging
+import os
+from typing import Optional
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
@@ -11,6 +13,8 @@ from interpiped.agents.worker import WorkerAgent
 from interpiped.agents.pm import PMAgent
 from interpiped.agents.tester import TesterAgent
 from interpiped.agents.architect import ArchitectAgent
+from interpiped.agents.pull_request import PullRequestAgent
+from interpiped.github.github_app import GitHubService
 from interpiped.github.webhook import process_github_event
 
 log = logging.getLogger(__name__)
@@ -23,6 +27,20 @@ worker = WorkerAgent("worker-1", bus)
 pm = PMAgent("pm-1", bus)
 tester = TesterAgent("tester-1", bus)
 architect = ArchitectAgent("architect-1", bus)
+pull_request_agent: Optional[PullRequestAgent] = None
+
+_github_app_id = os.environ.get("GITHUB_APP_ID")
+_github_private_key = os.environ.get("GITHUB_PRIVATE_KEY")
+_github_installation_id = os.environ.get("GITHUB_INSTALLATION_ID")
+if _github_app_id and _github_private_key and _github_installation_id:
+    github_service = GitHubService(
+        app_id=int(_github_app_id),
+        private_key=_github_private_key,
+        installation_id=int(_github_installation_id),
+    )
+    pull_request_agent = PullRequestAgent("pr-1", bus, github_service)
+else:
+    log.info("PullRequestAgent disabled: GITHUB_APP_ID, GITHUB_PRIVATE_KEY, and GITHUB_INSTALLATION_ID required")
 
 
 @app.on_event("startup")
@@ -44,6 +62,11 @@ async def startup() -> None:
         await architect.start()
     except Exception:
         log.exception("architect start failed")
+    if pull_request_agent is not None:
+        try:
+            await pull_request_agent.start()
+        except Exception:
+            log.exception("pull request agent start failed")
 
 
 @app.on_event("shutdown")
@@ -64,6 +87,11 @@ async def shutdown() -> None:
         await architect.stop()
     except Exception:
         log.exception("architect stop failed")
+    if pull_request_agent is not None:
+        try:
+            await pull_request_agent.stop()
+        except Exception:
+            log.exception("pull request agent stop failed")
     await bus.stop()
 
 

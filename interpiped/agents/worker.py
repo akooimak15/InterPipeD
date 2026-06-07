@@ -10,6 +10,22 @@ from interpiped.events import schemas
 from interpiped.services.git_service import GitService
 
 
+def resolve_clone_url(repository: str) -> str:
+    """Return a git clone URL for WorkerAgent.
+
+    Accepts full URLs, SSH URLs, local paths, or ``owner/repo`` shorthand.
+    For shorthand, uses ``INTERPIPED_GITHUB_TOKEN`` or ``GITHUB_TOKEN`` when set.
+    """
+    if "://" in repository or repository.startswith("git@"):
+        return repository
+    if os.path.isabs(repository) or os.path.isdir(repository):
+        return repository
+    token = os.environ.get("INTERPIPED_GITHUB_TOKEN") or os.environ.get("GITHUB_TOKEN")
+    if token:
+        return f"https://x-access-token:{token}@github.com/{repository}.git"
+    return f"https://github.com/{repository}.git"
+
+
 class WorkerAgent(BaseAgent):
     """Example worker agent that listens for TaskCreated and emits TaskCompleted."""
 
@@ -56,7 +72,7 @@ class WorkerAgent(BaseAgent):
     async def _process_task(self, task_id: str, repository: str | None, branch_name: str, title: str, description: str) -> None:
         tmpdir = tempfile.mkdtemp(prefix="interpiped-")
         try:
-            gs = GitService.clone_repository(str(repository), tmpdir)
+            gs = GitService.clone_repository(resolve_clone_url(str(repository)), tmpdir)
             gs.create_branch(branch_name)
 
             tasks_dir = os.path.join(gs.repo_path, "tasks")
@@ -69,6 +85,7 @@ class WorkerAgent(BaseAgent):
 
             commit_message = f"feat(task): {task_id}"
             gs.commit_all(commit_message)
+            gs.push_branch()
 
             sha = gs.get_current_commit_sha()
             rel_path = os.path.relpath(filepath, gs.repo_path)

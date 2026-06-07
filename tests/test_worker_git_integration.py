@@ -12,13 +12,17 @@ from interpiped.events import schemas
 
 @pytest.mark.asyncio
 async def test_worker_creates_commit_and_emits_taskcompleted(tmp_path) -> None:
-    # setup bare repo to clone from
-    src = tmp_path / "src"
-    src.mkdir()
-    r = Repo.init(src)
-    (src / "initial.txt").write_text("init")
+    bare = tmp_path / "bare.git"
+    Repo.init(bare, bare=True)
+    work = tmp_path / "work"
+    work.mkdir()
+    r = Repo.init(work)
+    (work / "initial.txt").write_text("init")
     r.git.add(A=True)
     r.index.commit("initial")
+    r.create_remote("origin", str(bare))
+    r.remote("origin").push(refspec=f"{r.active_branch.name}:{r.active_branch.name}")
+    src = bare
 
     # start bus and worker
     bus = InMemoryEventBus()

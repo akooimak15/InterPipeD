@@ -42,6 +42,11 @@ class GitService:
                     f.write("Initial commit\n")
                 repo.git.add(A=True)
                 repo.index.commit("initial commit")
+                bare_dir = f"{destination}.bare"
+                Repo.init(bare_dir, bare=True)
+                repo.create_remote("origin", bare_dir)
+                default_branch = repo.active_branch.name
+                repo.remote("origin").push(refspec=f"{default_branch}:{default_branch}")
                 return cls(destination)
             except Exception as e:
                 raise GitServiceError(f"clone or init failed: {e}")
@@ -85,7 +90,8 @@ class GitService:
     def push_branch(self, remote: str = "origin") -> None:
         try:
             r = self.repo.remote(remote)
-            r.push()
+            branch = self.repo.active_branch.name
+            r.push(refspec=f"{branch}:{branch}", set_upstream=True)
         except Exception as e:
             raise GitServiceError(f"push_branch failed: {e}")
 

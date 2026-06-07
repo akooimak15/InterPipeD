@@ -94,6 +94,22 @@ class ArchitectureRejected(BaseEvent):
     reason: str
 
 
+class PullRequestCreated(BaseEvent):
+    event_type: Literal["PullRequestCreated"] = "PullRequestCreated"
+    task_id: str
+    repository: str
+    pr_number: int
+    pr_url: str
+    head: str
+    base: str
+
+
+class PullRequestFailed(BaseEvent):
+    event_type: Literal["PullRequestFailed"] = "PullRequestFailed"
+    task_id: str
+    reason: str
+
+
 class IssueCreated(BaseEvent):
     event_type: Literal["IssueCreated"] = "IssueCreated"
     issue_number: int
@@ -119,6 +135,8 @@ def get_event_schemas() -> Dict[str, Dict[str, Any]]:
         TestFailed,
         ArchitectureApproved,
         ArchitectureRejected,
+        PullRequestCreated,
+        PullRequestFailed,
     ]
     return {m.__name__: m.model_json_schema() for m in models}
 
@@ -136,5 +154,7 @@ __all__ = [
     "TestFailed",
     "ArchitectureApproved",
     "ArchitectureRejected",
+    "PullRequestCreated",
+    "PullRequestFailed",
     "get_event_schemas",
 ]

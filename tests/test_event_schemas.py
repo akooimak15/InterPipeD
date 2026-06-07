@@ -16,6 +16,8 @@ def test_get_event_schemas_contains_models() -> None:
         "TestFailed",
         "ArchitectureApproved",
         "ArchitectureRejected",
+        "PullRequestCreated",
+        "PullRequestFailed",
     ]
     for name in expected:
         assert name in mapping
