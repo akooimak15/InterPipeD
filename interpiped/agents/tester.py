@@ -23,6 +23,8 @@ class TesterAgent(BaseAgent):
         if self._started:
             return
         await self.bus.subscribe("TaskCompleted", self.handle_event)
+        # subscribe to TaskFailed to make failures observable; ignore them
+        await self.bus.subscribe("TaskFailed", self._handle_task_failed)
         self._started = True
 
     async def stop(self) -> None:
@@ -59,3 +61,7 @@ class TesterAgent(BaseAgent):
                 source=self.name,
             )
             await self.bus.publish(passed)
+
+    async def _handle_task_failed(self, event: schemas.TaskFailed) -> None:
+        # For v0.1, TesterAgent ignores TaskFailed but subscribes for observability
+        return

@@ -42,6 +42,31 @@ class TaskCompleted(BaseEvent):
     files_modified: list[str]
 
 
+class TaskFailed(BaseEvent):
+    event_type: Literal["TaskFailed"] = "TaskFailed"
+    task_id: str
+    reason: str
+    error_type: str
+
+
+class RetryRequested(BaseEvent):
+    event_type: Literal["RetryRequested"] = "RetryRequested"
+    task_id: str
+    retry_count: int
+    reason: str
+    # optional task context so workers can re-run the task
+    repository: Optional[str] = None
+    branch_name: Optional[str] = None
+    title: Optional[str] = None
+    description: Optional[str] = None
+
+
+class PermanentFailure(BaseEvent):
+    event_type: Literal["PermanentFailure"] = "PermanentFailure"
+    task_id: str
+    reason: str
+
+
 class TestPassed(BaseEvent):
     event_type: Literal["TestPassed"] = "TestPassed"
     task_id: str
@@ -87,6 +112,9 @@ def get_event_schemas() -> Dict[str, Dict[str, Any]]:
         IssueCreated,
         TaskCreated,
         TaskCompleted,
+        TaskFailed,
+        RetryRequested,
+        PermanentFailure,
         TestPassed,
         TestFailed,
         ArchitectureApproved,
@@ -101,6 +129,9 @@ __all__ = [
     "IssueCreated",
     "TaskCreated",
     "TaskCompleted",
+    "TaskFailed",
+    "RetryRequested",
+    "PermanentFailure",
     "TestPassed",
     "TestFailed",
     "ArchitectureApproved",

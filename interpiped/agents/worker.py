@@ -73,12 +73,21 @@ class WorkerAgent(BaseAgent):
             )
 
             await self.bus.publish(completed)
-        except GitServiceError:
-            # log and re-raise or publish failed event in future; for now just log
-            # avoid crashing the event loop
+        except Exception as e:
+            # Publish TaskFailed so failures are observable
             import logging
 
             logging.getLogger(__name__).exception("git operation failed for task %s", task_id)
+            failed = schemas.TaskFailed(
+                task_id=task_id,
+                reason=str(e),
+                error_type=type(e).__name__,
+                source=self.name,
+            )
+            try:
+                await self.bus.publish(failed)
+            except Exception:
+                logging.getLogger(__name__).exception("failed to publish TaskFailed for %s", task_id)
         finally:
             # do not remove tmpdir to allow inspection in tests if needed
             await asyncio.sleep(0)
