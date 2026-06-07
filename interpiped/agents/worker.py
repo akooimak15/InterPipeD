@@ -42,11 +42,6 @@ class WorkerAgent(BaseAgent):
             files_modified=files_modified,
             source=self.name,
             event_type="TaskCompleted",
-            repository=getattr(event, "repository", ""),
-            issue_number=getattr(event, "issue_number", None),
-            title=getattr(event, "title", ""),
-            description=getattr(event, "description", ""),
-            branch_name=getattr(event, "branch_name", ""),
         )
 
         await self.bus.publish(completed)

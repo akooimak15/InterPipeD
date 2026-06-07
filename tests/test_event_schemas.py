@@ -9,6 +9,7 @@ def test_get_event_schemas_contains_models() -> None:
     mapping = schemas.get_event_schemas()
     expected = [
         "BaseEvent",
+        "IssueCreated",
         "TaskCreated",
         "TaskCompleted",
         "TestPassed",

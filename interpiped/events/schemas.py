@@ -26,32 +26,55 @@ class BaseEvent(BaseModel):
 
 class TaskCreated(BaseEvent):
     event_type: Literal["TaskCreated"] = "TaskCreated"
-    # payload may contain task_id, description, priority, etc.
+    task_id: str
+    issue_number: int
+    repository: str
+    branch_name: str
+    title: str
+    description: str
+    priority: str = Field(default="normal")
 
 
 class TaskCompleted(BaseEvent):
     event_type: Literal["TaskCompleted"] = "TaskCompleted"
-    # payload may contain original_event_id, result, artifacts
+    task_id: str
+    commit_sha: str
+    files_modified: list[str]
 
 
 class TestPassed(BaseEvent):
     event_type: Literal["TestPassed"] = "TestPassed"
-    # payload may contain test_suite, duration, details
+    task_id: str
+    test_count: int
+    duration_ms: int
 
 
 class TestFailed(BaseEvent):
     event_type: Literal["TestFailed"] = "TestFailed"
-    # payload may contain test_suite, failures, logs
+    task_id: str
+    failed_tests: list[str]
+    duration_ms: int
 
 
 class ArchitectureApproved(BaseEvent):
     event_type: Literal["ArchitectureApproved"] = "ArchitectureApproved"
-    # payload may contain pr_number, approver
+    task_id: str
+    reviewer: str
 
 
 class ArchitectureRejected(BaseEvent):
     event_type: Literal["ArchitectureRejected"] = "ArchitectureRejected"
-    # payload may contain reasons, suggestions
+    task_id: str
+    reviewer: str
+    reason: str
+
+
+class IssueCreated(BaseEvent):
+    event_type: Literal["IssueCreated"] = "IssueCreated"
+    issue_number: int
+    repository: str
+    title: str
+    description: str
 
 
 def get_event_schemas() -> Dict[str, Dict[str, Any]]:
@@ -61,6 +84,7 @@ def get_event_schemas() -> Dict[str, Dict[str, Any]]:
     """
     models = [
         BaseEvent,
+        IssueCreated,
         TaskCreated,
         TaskCompleted,
         TestPassed,
@@ -74,6 +98,7 @@ def get_event_schemas() -> Dict[str, Dict[str, Any]]:
 __all__ = [
     "schema_version",
     "BaseEvent",
+    "IssueCreated",
     "TaskCreated",
     "TaskCompleted",
     "TestPassed",
