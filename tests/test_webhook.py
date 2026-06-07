@@ -14,10 +14,16 @@ async def test_issues_opened_creates_issuecreated_and_taskcreated() -> None:
 
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
-        # ensure app bus & agents running for deterministic handling
+        # create fresh bus and pm for isolation
+        from interpiped.core.event_bus import InMemoryEventBus
+        from interpiped.agents.pm import PMAgent
+
+        new_bus = InMemoryEventBus()
+        api_main.bus = new_bus
+        api_main.pm = PMAgent("pm-test", new_bus)
+
         await api_main.bus.start()
         await api_main.pm.start()
-        await api_main.worker.start()
 
         # subscribe to TaskCreated events
         seen = asyncio.Event()
@@ -37,6 +43,9 @@ async def test_issues_opened_creates_issuecreated_and_taskcreated() -> None:
         assert r.status_code == 200
 
         await asyncio.wait_for(seen.wait(), timeout=1.0)
+
+        await api_main.pm.stop()
+        await api_main.bus.stop()
 
 
 @pytest.mark.asyncio
