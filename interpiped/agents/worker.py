@@ -21,6 +21,7 @@ class WorkerAgent(BaseAgent):
         if self._started:
             return
         await self.bus.subscribe("TaskCreated", self.handle_event)
+        await self.bus.subscribe("RetryRequested", self.handle_retry)
         self._started = True
 
     async def stop(self) -> None:
@@ -38,16 +39,26 @@ class WorkerAgent(BaseAgent):
         title = getattr(event, "title", "")
         description = getattr(event, "description", "")
 
-        # perform git operations in a temporary directory
+        await self._process_task(task_id, repository, branch_name, title, description)
+
+    async def handle_retry(self, event: Any) -> None:
+        if getattr(event, "event_type", None) != "RetryRequested":
+            return
+
+        task_id = getattr(event, "task_id")
+        repository = getattr(event, "repository", None)
+        branch_name = getattr(event, "branch_name", f"task/{task_id}")
+        title = getattr(event, "title", "")
+        description = getattr(event, "description", "")
+
+        await self._process_task(task_id, repository, branch_name, title, description)
+
+    async def _process_task(self, task_id: str, repository: str | None, branch_name: str, title: str, description: str) -> None:
         tmpdir = tempfile.mkdtemp(prefix="interpiped-")
         try:
-            # clone repository
             gs = GitService.clone_repository(str(repository), tmpdir)
-
-            # create and checkout branch
             gs.create_branch(branch_name)
 
-            # create tasks directory and placeholder file
             tasks_dir = os.path.join(gs.repo_path, "tasks")
             os.makedirs(tasks_dir, exist_ok=True)
             filename = f"{task_id}.md"
@@ -56,11 +67,9 @@ class WorkerAgent(BaseAgent):
             with open(filepath, "w", encoding="utf-8") as fh:
                 fh.write(content)
 
-            # commit changes
             commit_message = f"feat(task): {task_id}"
             gs.commit_all(commit_message)
 
-            # collect result
             sha = gs.get_current_commit_sha()
             rel_path = os.path.relpath(filepath, gs.repo_path)
             files_modified = [rel_path]
@@ -74,7 +83,6 @@ class WorkerAgent(BaseAgent):
 
             await self.bus.publish(completed)
         except Exception as e:
-            # Publish TaskFailed so failures are observable
             import logging
 
             logging.getLogger(__name__).exception("git operation failed for task %s", task_id)
@@ -89,5 +97,4 @@ class WorkerAgent(BaseAgent):
             except Exception:
                 logging.getLogger(__name__).exception("failed to publish TaskFailed for %s", task_id)
         finally:
-            # do not remove tmpdir to allow inspection in tests if needed
             await asyncio.sleep(0)
