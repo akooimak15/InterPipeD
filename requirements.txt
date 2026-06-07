@@ -4,3 +4,4 @@ pydantic>=2.0
 pytest>=7.0
 pytest-asyncio>=0.21
 httpx>=0.24
+GitPython>=3.1
