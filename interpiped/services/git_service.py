@@ -25,6 +25,11 @@ class GitService:
         except Exception as e:
             raise GitServiceError(f"failed to open repo at {self.repo_path}: {e}")
 
+    def _require_repo(self) -> Repo:
+        if self.repo is None:
+            raise GitServiceError("repository is not initialized")
+        return self.repo
+
     @classmethod
     def clone_repository(cls, repo_url: str, destination: str) -> "GitService":
         try:
@@ -53,50 +58,55 @@ class GitService:
 
     def create_branch(self, branch_name: str) -> None:
         try:
-            if branch_name in self.repo.heads:
-                head = self.repo.heads[branch_name]
+            repo = self._require_repo()
+            if branch_name in repo.heads:
+                head = repo.heads[branch_name]
             else:
-                head = self.repo.create_head(branch_name)
+                head = repo.create_head(branch_name)
             head.checkout()
         except Exception as e:
             raise GitServiceError(f"create_branch failed: {e}")
 
     def checkout_branch(self, branch_name: str) -> None:
         try:
-            if branch_name in self.repo.heads:
-                self.repo.heads[branch_name].checkout()
+            repo = self._require_repo()
+            if branch_name in repo.heads:
+                repo.heads[branch_name].checkout()
             else:
-                self.repo.git.checkout(branch_name)
+                repo.git.checkout(branch_name)
         except Exception as e:
             raise GitServiceError(f"checkout_branch failed: {e}")
 
     def commit_all(self, message: str) -> None:
         try:
-            self.repo.git.add(all=True)
+            repo = self._require_repo()
+            repo.git.add(all=True)
             has_changes = False
             try:
                 # if HEAD doesn't exist, this will raise; treat as having changes
-                diffs = self.repo.index.diff("HEAD")
-                has_changes = bool(diffs) or bool(self.repo.untracked_files)
+                diffs = repo.index.diff("HEAD")
+                has_changes = bool(diffs) or bool(repo.untracked_files)
             except Exception:
-                has_changes = bool(self.repo.index.entries) or bool(self.repo.untracked_files)
+                has_changes = bool(repo.index.entries) or bool(repo.untracked_files)
 
             if not has_changes:
                 return
-            self.repo.index.commit(message)
+            repo.index.commit(message)
         except Exception as e:
             raise GitServiceError(f"commit_all failed: {e}")
 
     def push_branch(self, remote: str = "origin") -> None:
         try:
-            r = self.repo.remote(remote)
-            branch = self.repo.active_branch.name
+            repo = self._require_repo()
+            r = repo.remote(remote)
+            branch = repo.active_branch.name
             r.push(refspec=f"{branch}:{branch}", set_upstream=True)
         except Exception as e:
             raise GitServiceError(f"push_branch failed: {e}")
 
     def get_current_commit_sha(self) -> str:
         try:
-            return self.repo.head.commit.hexsha
+            repo = self._require_repo()
+            return repo.head.commit.hexsha
         except Exception as e:
             raise GitServiceError(f"get_current_commit_sha failed: {e}")

@@ -111,7 +111,7 @@ async def github_webhook(request: Request) -> JSONResponse:
     - pull_request (action: opened) -> BaseEvent(event_type='PullRequestOpened')
     - issue_comment (action: created) -> BaseEvent(event_type='IssueCommentCreated')
     """
-    event_header = request.headers.get("X-GitHub-Event")
+    event_header = request.headers.get("X-GitHub-Event") or ""
     payload = await request.json()
 
     try:

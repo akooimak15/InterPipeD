@@ -27,12 +27,18 @@ class GitHubService:
             except Exception as exc:  # pragma: no cover - defensive
                 raise GitHubServiceError(f"failed to initialize GitHub App integration: {exc}") from exc
 
+    def _require_integration(self) -> GithubIntegration:
+        if self._integration is None:
+            raise GitHubServiceError("GitHub integration is not initialized")
+        return self._integration
+
     def get_installation_token(self, installation_id: Optional[int] = None) -> str:
         """Return an installation access token for the GitHub App."""
 
         target_installation_id = installation_id or self.installation_id
         try:
-            auth = self._integration.get_access_token(target_installation_id)
+            integration = self._require_integration()
+            auth = integration.get_access_token(target_installation_id)
             token = getattr(auth, "token", None)
             if not token:
                 raise GitHubServiceError("installation token is empty")

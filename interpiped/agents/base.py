@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import abc
+from typing import Any
 
 from interpiped.core.event_bus import EventBus
-from interpiped.events.models import Event
 
 
 class BaseAgent(abc.ABC):
@@ -27,5 +27,5 @@ class BaseAgent(abc.ABC):
         """Cleanup and stop agent."""
 
     @abc.abstractmethod
-    async def handle_event(self, event: Event) -> None:
+    async def handle_event(self, event: Any) -> None:
         """Handle a single event delivered by the EventBus."""

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any, Dict, Optional, Literal
+from typing import Any, Dict, Literal, Optional
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
@@ -19,7 +19,7 @@ class BaseEvent(BaseModel):
     source: str
     target: Optional[str] = None
     payload: Dict[str, Any] = Field(default_factory=dict)
-    schema_version: Literal["1.0"] = Field(default=schema_version)
+    schema_version: Literal["1.0"] = "1.0"
 
     model_config = {"extra": "forbid"}
 
@@ -118,27 +118,29 @@ class IssueCreated(BaseEvent):
     description: str
 
 
+EVENT_MODELS: list[type[BaseModel]] = [
+    BaseEvent,
+    IssueCreated,
+    TaskCreated,
+    TaskCompleted,
+    TaskFailed,
+    RetryRequested,
+    PermanentFailure,
+    TestPassed,
+    TestFailed,
+    ArchitectureApproved,
+    ArchitectureRejected,
+    PullRequestCreated,
+    PullRequestFailed,
+]
+
+
 def get_event_schemas() -> Dict[str, Dict[str, Any]]:
     """Return JSON Schemas for all event models in this module.
 
     The returned dict maps model class name -> JSON Schema dict.
     """
-    models = [
-        BaseEvent,
-        IssueCreated,
-        TaskCreated,
-        TaskCompleted,
-        TaskFailed,
-        RetryRequested,
-        PermanentFailure,
-        TestPassed,
-        TestFailed,
-        ArchitectureApproved,
-        ArchitectureRejected,
-        PullRequestCreated,
-        PullRequestFailed,
-    ]
-    return {m.__name__: m.model_json_schema() for m in models}
+    return {m.__name__: m.model_json_schema() for m in EVENT_MODELS}
 
 
 __all__ = [
