@@ -7,7 +7,7 @@ from typing import Any
 
 from interpiped.agents.base import BaseAgent
 from interpiped.events import schemas
-from interpiped.services.git_service import GitService, GitServiceError
+from interpiped.services.git_service import GitService
 
 
 class WorkerAgent(BaseAgent):

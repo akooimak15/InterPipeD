@@ -1,10 +1,8 @@
-import os
 
-import pytest
 
 from git import Repo
 
-from interpiped.services.git_service import GitService, GitServiceError
+from interpiped.services.git_service import GitService
 
 
 def write_file(path, name, content="x"):

@@ -2,9 +2,8 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
-from typing import Optional
 
-from git import Repo, GitCommandError
+from git import Repo
 
 
 class GitServiceError(RuntimeError):

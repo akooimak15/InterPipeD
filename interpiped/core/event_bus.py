@@ -12,7 +12,7 @@ log = logging.getLogger(__name__)
 class EventBus:
     """EventBus interface."""
 
-    async def publish(self, event: Event) -> None:  # pragma: no cover - interface
+    async def publish(self, event: Any) -> None:  # pragma: no cover - interface
         raise NotImplementedError
 
     async def subscribe(self, event_type: str, handler: Handler) -> None:  # pragma: no cover
@@ -52,7 +52,7 @@ class InMemoryEventBus(EventBus):
             await self._task
         log.info("InMemoryEventBus stopped")
 
-    async def publish(self, event: Event) -> None:
+    async def publish(self, event: Any) -> None:
         await self._queue.put(event)
 
     async def subscribe(self, event_type: str, handler: Handler) -> None:
@@ -73,7 +73,7 @@ class InMemoryEventBus(EventBus):
                 # dispatch each handler concurrently
                 asyncio.create_task(self._safe_invoke(h, event))
 
-    async def _safe_invoke(self, handler: Handler, event: Event) -> None:
+    async def _safe_invoke(self, handler: Handler, event: Any) -> None:
         try:
             await handler(event)
         except Exception:

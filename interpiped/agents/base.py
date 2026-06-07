@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import abc
-from typing import Optional
 
 from interpiped.core.event_bus import EventBus
 from interpiped.events.models import Event
